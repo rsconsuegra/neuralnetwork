@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on Thu Apr 20 21:46:31 2017
-
 @author: RandySteven
 """
 import numpy as np
@@ -19,35 +18,45 @@ def tanh_prime(x):
     return 1.0 - np.tanh(x)**2
 
 
-n=int(input('Numero de Neuronas de la primera capa='))
-n2=int(input('Numero de Neuronas de la segunda capa='))
+nlayers=int(input('Digite numero de capas='))
+
+n=[]
+for i in range(0,nlayers):
+    n.append(int(input('Numero de Neuronas de la capa '+str(i+1)+'=')))
+    
 
 #Observations and real values: X values to estimate, Y real values.
 X = np.array([ [0,0,1],[0,1,1],[1,0,1],[1,1,1] ])
 y = np.array([[0,1,1,0]]).T
 
 #weight values
-syn0 = 2*np.random.random((3,n)) - 1
-syn1 = 2*np.random.random((n,n2)) - 1
-syn2 = 2*np.random.random((n2,1)) - 1
-                         
-for j in range(60000):
-
+syn=[]
+nant=3
+for i in range(0,nlayers-1):
+    syn.append(2*np.random.random((nant,n[i])) - 1)
+    nant=n[i]
+syn.append(2*np.random.random((nant,1)) - 1)
+                        
+for i in range(60000):
     #Forward Propagation
-    l1 = sigmoid(np.dot(X,syn0))
-    l2 = sigmoid(np.dot(l1,syn1))
-    l3 = sigmoid(np.dot(l2,syn2))
+    l=[]
+    l.append(sigmoid(np.dot(X,syn[0])))
+    for i in range (1,nlayers):
+        l.append(sigmoid(np.dot(l[i-1],syn[i])))
     
     #Backpropagation
     #Error = (Real-Estimated)*diff(sigmoid)
-    l3_delta = (y - l3)*(l3*(1-l3)) 
-    l2_delta = l3_delta.dot(syn2.T) * (l2 * (1-l2))
-    l1_delta = l2_delta.dot(syn1.T) * (l1 * (1-l1))
+    l_delta=[0]*nlayers
+    l_delta[-1]=((y-l[-1])*(l[-1]*(1-l[-1])))
+    for i in range(nlayers-2,-1,-1):
+        l_delta[i]=(l_delta[i+1].dot(syn[i+1].T)*(l[i]*(1-l[i])))
+    
     
     #new weights distribution
-    syn2 += l2.T.dot(l3_delta)
-    syn1 += l1.T.dot(l2_delta)
-    syn0 += X.T.dot(l1_delta)
+    for i in range(nlayers-1,0,-1):
+        syn[i] += l[i-1].T.dot(l_delta[i])
+    syn[0]+=X.T.dot(l_delta[0])
 
+#
 print("La estimación es: ")
-print('\n'.join(' '.join(str(cell) for cell in row) for row in l3))
+print('\n'.join(' '.join(str(cell) for cell in row) for row in l[-1]))
